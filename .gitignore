@@ -1,2 +1,4 @@
 minecweeper
 mun
+*.out
+tmp*
