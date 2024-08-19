@@ -1,6 +1,6 @@
 
 CC = cc
-OPTIONS = -Wall -Wextra -pedantic
+OPTIONS = -g -Wall -Wextra -pedantic
 
 all: minecweeper
 

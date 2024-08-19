@@ -5,7 +5,7 @@
 #include <string.h>
 #include <time.h>
 
-#define IN_BUF_SIZE 256
+#define IN_BUF_SIZE 128
 
 #define CELLS_AT(board, x, y) (board)->cells[(y)*(board)->width + (x)]
 
@@ -39,7 +39,7 @@ void init_board(Board *board) {
 			y = rand() % board->height;
 		} while (CELLS_AT(board, x, y).is_mine);
 		CELLS_AT(board, x, y).is_mine = true;
-		int dirs[][2] = {
+		const int dirs[][2] = {
 			{-1, -1},
 			{-1,  1},
 			{ 1, -1},
@@ -53,8 +53,8 @@ void init_board(Board *board) {
 			size_t nx = x + dirs[j][0];
 			size_t ny = y + dirs[j][1];
 			if (nx >= board->width || ny >= board->height) continue;
-			if (CELLS_AT(board, x, y).is_mine) continue;
-			CELLS_AT(board, x, y).mine_num++;
+			if (CELLS_AT(board, nx, ny).is_mine) continue;
+			CELLS_AT(board, nx, ny).mine_num++;
 		}
 	}
 	for (size_t y = 0; y < board->height; y++) {
@@ -91,14 +91,13 @@ void print_board(Board *board) {
 	printf("+\n");
 
 	for (size_t y = 0; y < board->height; y++) {
+		printf("%2zu | ", y);
 		for (size_t x = 0; x < board->width; x++) {
-			if (x == 0) {
-				printf("%2zu | ", y);
-			}
 			print_cell(&CELLS_AT(board, x, y));
 		}
 		printf("|\n");
 	}
+
 	printf("   +");
 	for (size_t i = 0; i < board->width*2 + 1; i++) {
 		printf("-");
@@ -119,7 +118,7 @@ void reveal_cell(Board *board, size_t x, size_t y) {
 	revealed_cells++;
 
 	if (CELLS_AT(board, x, y).mine_num == 0) {
-		int dirs[][2] = {
+		const int dirs[][2] = {
 			{-1, -1},
 			{-1,  1},
 			{ 1, -1},
@@ -172,7 +171,7 @@ void meta_command(Board *board, char *buf) {
 	}
 }
 
-void print_menu() {
+void print_menu(void) {
 	printf("\x1b[H");
 	printf("\x1b[2J");
 	printf("MineCweeper\n"
@@ -184,7 +183,7 @@ void print_menu() {
 	       "(Type 'quit' to quit)\n\x1b[2A");
 }
 
-void print_help_menu() {
+void print_help_menu(void) {
 	printf("Symbols:\n"
 	       "1 - 8: number of surrounding mines\n"
 	       "!: flagged cell\n"
