@@ -1,5 +1,4 @@
 
-#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,6 +6,8 @@
 #include <time.h>
 
 #define IN_BUF_SIZE 256
+
+#define CELLS_AT(board, x, y) (board)->cells[(y)*(board)->width + (x)]
 
 typedef struct {
 	bool is_revealed;
@@ -36,8 +37,8 @@ void init_board(Board *board) {
 		do {
 			x = rand() % board->width;
 			y = rand() % board->height;
-		} while (board->cells[y*board->width + x].is_mine);
-		board->cells[y*board->width + x].is_mine = true;
+		} while (CELLS_AT(board, x, y).is_mine);
+		CELLS_AT(board, x, y).is_mine = true;
 		int dirs[][2] = {
 			{-1, -1},
 			{-1,  1},
@@ -52,13 +53,13 @@ void init_board(Board *board) {
 			size_t nx = x + dirs[j][0];
 			size_t ny = y + dirs[j][1];
 			if (nx >= board->width || ny >= board->height) continue;
-			if (board->cells[ny*board->width + nx].is_mine) continue;
-			board->cells[ny*board->width + nx].mine_num++;
+			if (CELLS_AT(board, x, y).is_mine) continue;
+			CELLS_AT(board, x, y).mine_num++;
 		}
 	}
 	for (size_t y = 0; y < board->height; y++) {
 		for (size_t x = 0; x < board->width; x++) {
-			board->cells[y*board->width + x].is_revealed = false;
+			CELLS_AT(board, x, y).is_revealed = false;
 		}
 	}
 }
@@ -94,7 +95,7 @@ void print_board(Board *board) {
 			if (x == 0) {
 				printf("%2zu | ", y);
 			}
-			print_cell(&board->cells[y*board->width + x]);
+			print_cell(&CELLS_AT(board, x, y));
 		}
 		printf("|\n");
 	}
@@ -114,10 +115,10 @@ void read_command(char *buf) {
 }
 
 void reveal_cell(Board *board, size_t x, size_t y) {
-	board->cells[y*board->width + x].is_revealed = true;
+	CELLS_AT(board, x, y).is_revealed = true;
 	revealed_cells++;
 
-	if (board->cells[y*board->width + x].mine_num == 0) {
+	if (CELLS_AT(board, x, y).mine_num == 0) {
 		int dirs[][2] = {
 			{-1, -1},
 			{-1,  1},
@@ -141,8 +142,8 @@ void reveal_cell(Board *board, size_t x, size_t y) {
 void print_clean_board(Board *board) {
 	for (size_t y = 0; y < board->height; y++) {
 		for (size_t x = 0; x < board->width; x++) {
-			if (board->cells[y*board->width + x].is_mine) printf("# ");
-			else printf("%zu ", board->cells[y*board->width + x].mine_num);
+			if (CELLS_AT(board, x, y).is_mine) printf("# ");
+			else printf("%zu ", CELLS_AT(board, x, y).mine_num);
 		}
 		printf("\n");
 	}
@@ -184,17 +185,17 @@ void print_menu() {
 }
 
 void print_help_menu() {
-	printf("Symbols:\n");
-	printf("1 - 8: number of surrounding mines\n");
-	printf("!: flagged cell\n");
-	printf("#: mine\n");
-	printf(".: unrevealed cell\n");
-	printf("\n");
-	printf("Commands:\n");
-	printf("r y x: reveal cell at position (x,y)\n");
-	printf("f y x: flag/unflag cell at position (x,y)\n");
-	printf("help: prints this list\n");
-	printf("quit: quits the game\n");
+	printf("Symbols:\n"
+	       "1 - 8: number of surrounding mines\n"
+	       "!: flagged cell\n"
+	       "#: mine\n"
+	       ".: unrevealed cell\n"
+	       "\n"
+	       "Commands:\n"
+	       "r y x: reveal cell at position (x,y)\n"
+	       "f y x: flag/unflag cell at position (x,y)\n"
+	       "help: prints this list\n"
+	       "quit: quits the game\n");
 }
 
 int main(void) {
@@ -206,29 +207,22 @@ int main(void) {
 	for (;;) {
 		print_menu();
 		read_command(buf);
-		if (strcmp(buf, "quit") == 0) break;
+		if (strcmp(buf, "quit") == 0) return 0;
 
-		char dif;
-		if (sscanf(buf, "%c", &dif) == 1) {
-			switch (dif) {
-				case 'E':
-					board.width = board.height = 9;
-					board.mine_num = 10;
-					break;
-				case 'M':
-					board.width = board.height = 16;
-					board.mine_num = 40;
-					break;
-				case 'H':
-					board.width = 30;
-					board.height = 16;
-					board.mine_num = 99;
-					break;
-				default:
-					continue;
-			}
-			break;
+		if (strcmp(buf, "E") == 0) {
+			board.width = board.height = 9;
+			board.mine_num = 10;
+		} else if (strcmp(buf, "M") == 0) {
+			board.width = board.height = 16;
+			board.mine_num = 40;
+		} else if (strcmp(buf, "H") == 0) {
+			board.width = 30;
+			board.height = 16;
+			board.mine_num = 99;
+		} else {
+			continue;
 		}
+		break;
 	}
 
 	init_board(&board);
@@ -252,25 +246,25 @@ int main(void) {
 		size_t x, y;
 		if (sscanf(buf, "%c %zu %zu", &action, &y, &x) == 3) {
 			if (x >= board.width || y >= board.height) {
-				refresh_screen(&board);
+				// refresh_screen(&board);
 				printf("Invalid coordinates (%d,%d).\n", (int)x, (int)y);
 				continue;
 			}
-			if (board.cells[y*board.width + x].is_revealed) {
-				refresh_screen(&board);
+			if (CELLS_AT(&board, x, y).is_revealed) {
+				// refresh_screen(&board);
 				printf("Cell is already revealed.\n");
 				continue;
 			}
 			if (action == 'f') {
-				board.cells[y*board.width + x].is_flagged = !board.cells[y*board.width + x].is_flagged;
+				CELLS_AT(&board, x, y).is_flagged = !CELLS_AT(&board, x, y).is_flagged;
 			} else if (action == 'r') {
-				if (board.cells[y*board.width + x].is_flagged) {
-					refresh_screen(&board);
+				if (CELLS_AT(&board, x, y).is_flagged) {
+					// refresh_screen(&board);
 					printf("Cell is flagged.\n");
 					continue;
 				}
 				reveal_cell(&board, x, y);
-				if (board.cells[y*board.width + x].is_mine) {
+				if (CELLS_AT(&board, x, y).is_mine) {
 					reveal_board(&board);
 					refresh_screen(&board);
 					printf("You hit a mine! You lose!\n");
@@ -283,7 +277,7 @@ int main(void) {
 			}
 			refresh_screen(&board);
 		} else {
-			refresh_screen(&board);
+			// refresh_screen(&board);
 			printf("Invalid command: '%s'.\n", buf);
 		}
 	}
