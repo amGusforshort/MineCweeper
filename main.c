@@ -254,7 +254,7 @@ _begin_game:
 	for (;;) {
 		print_menu();
 		read_command(buf);
-		if (strcmp(buf, "quit") == 0) return 0;
+		if (strcmp(buf, "quit") == 0) goto _exit_game;
 
 		if (strcmp(buf, "E") == 0) {
 			board.width = board.height = 9;
@@ -336,7 +336,9 @@ _begin_game:
 	}
 
 _exit_game:
-	free(board.cells);
+	if (board.cells != NULL) {
+		free(board.cells);
+	}
 	return 0;
 }
 
