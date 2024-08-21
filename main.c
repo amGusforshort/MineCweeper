@@ -336,9 +336,7 @@ _begin_game:
 	}
 
 _exit_game:
-	if (board.cells != NULL) {
-		free(board.cells);
-	}
+	free(board.cells);
 	return 0;
 }
 
