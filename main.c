@@ -180,7 +180,7 @@ void reveal_cell(Board *board, size_t x, size_t y) {
 			size_t nx = x + dirs[j][0];
 			size_t ny = y + dirs[j][1];
 			if (nx >= board->width || ny >= board->height) continue;
-			if (IS_REVEALED(CELLS_AT(board, nx, ny))) continue;
+			if (IS_REVEALED(CELLS_AT(board, nx, ny)) || IS_FLAGGED(CELLS_AT(board, nx, ny))) continue;
 			reveal_cell(board, nx, ny);
 		}
 	}

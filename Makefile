@@ -1,8 +1,11 @@
 
 CC = cc
-OPTIONS = -g -Wall -Wextra -pedantic
+OPTIONS = -Wall -Wextra -pedantic
 
 all: minecweeper
+
+run: minecweeper
+	./minecweeper
 
 minecweeper: main.c
 	$(CC) $(OPTIONS) -o $@ $<
