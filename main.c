@@ -25,6 +25,17 @@
 #define SET_FLAGGED(cell, bit)  ((cell) = ((cell) & ~(0x1 << FLAG_OFFSET))   | ((bit) << 0x6))
 #define SET_REVEALED(cell, bit) ((cell) = ((cell) & ~(0x1 << REVEAL_OFFSET)) | ((bit) << 0x7))
 
+static const int dirs[][2] = {
+	{-1, -1},
+	{-1,  1},
+	{ 1, -1},
+	{ 1,  1},
+	{ 0, -1},
+	{ 0,  1},
+	{-1,  0},
+	{ 1,  0},
+};
+
 // rfmu nnnn
 typedef uint8_t Cell;
 
@@ -54,16 +65,6 @@ void init_game(Board *board) {
 			y = rand() % board->height;
 		} while (IS_MINE(CELLS_AT(board, x, y)));
 		SET_MINE(CELLS_AT(board, x, y), true);
-		const int dirs[][2] = {
-			{-1, -1},
-			{-1,  1},
-			{ 1, -1},
-			{ 1,  1},
-			{ 0, -1},
-			{ 0,  1},
-			{-1,  0},
-			{ 1,  0},
-		};
 		for (size_t j = 0; j < 8; j++) {
 			size_t nx = x + dirs[j][0];
 			size_t ny = y + dirs[j][1];
@@ -166,16 +167,6 @@ void reveal_cell(Board *board, size_t x, size_t y) {
 	revealed_cells++;
 
 	if (MINE_NUM(CELLS_AT(board, x, y)) == 0) {
-		const int dirs[][2] = {
-			{-1, -1},
-			{-1,  1},
-			{ 1, -1},
-			{ 1,  1},
-			{ 0, -1},
-			{ 0,  1},
-			{-1,  0},
-			{ 1,  0},
-		};
 		for (size_t j = 0; j < 8; j++) {
 			size_t nx = x + dirs[j][0];
 			size_t ny = y + dirs[j][1];
@@ -184,6 +175,35 @@ void reveal_cell(Board *board, size_t x, size_t y) {
 			reveal_cell(board, nx, ny);
 		}
 	}
+}
+
+/**
+ * Returns true if a mine was revealed, else false.
+ */
+bool reveal_around(Board *board, size_t x, size_t y) {
+	size_t mine_num = MINE_NUM(CELLS_AT(board, x, y));
+	for (size_t i = 0; i < 8; i++) {
+		size_t nx = x + dirs[i][0];
+		size_t ny = y + dirs[i][1];
+		if (nx >= board->width || ny >= board->height) continue;
+		if (IS_FLAGGED(CELLS_AT(board, nx, ny))) mine_num -= 1;
+	}
+	bool hit_mine = false;
+	if (mine_num <= 0) {
+		for (size_t i = 0; i < 8; i++) {
+			size_t nx = x + dirs[i][0];
+			size_t ny = y + dirs[i][1];
+			if (nx >= board->width || ny >= board->height) continue;
+			Cell cell = CELLS_AT(board, nx, ny);
+			if (!IS_FLAGGED(cell) && !IS_REVEALED(cell)) {
+				reveal_cell(board, nx, ny);
+				if (!hit_mine && IS_MINE(cell)) {
+					hit_mine = true;
+				}
+			}
+		}
+	}
+	return hit_mine;
 }
 
 void print_clean_board(Board *board) {
@@ -296,10 +316,6 @@ _begin_game:
 				printf("Invalid coordinates (%d,%d).\n", (int)x, (int)y);
 				continue;
 			}
-			if (IS_REVEALED(CELLS_AT(&board, x, y))) {
-				printf("Cell is already revealed.\n");
-				continue;
-			}
 			if (action == 'f') {
 				SET_FLAGGED(CELLS_AT(&board, x, y), !IS_FLAGGED(CELLS_AT(&board, x, y)));
 			} else if (action == 'r') {
@@ -307,16 +323,30 @@ _begin_game:
 					printf("Cell is flagged.\n");
 					continue;
 				}
-				reveal_cell(&board, x, y);
-				if (IS_MINE(CELLS_AT(&board, x, y))) {
-					reveal_board(&board);
-					refresh_screen(&board);
-					printf("You hit a mine! You lose!\n");
-					break;
-				} else if (revealed_cells == board.width*board.height - board.mine_num) {
-					refresh_screen(&board);
-					printf("You won!\n");
-					break;
+				if (IS_REVEALED(CELLS_AT(&board, x, y))) {
+					bool hit_mine = reveal_around(&board, x, y);
+					if (hit_mine) {
+						reveal_board(&board);
+						refresh_screen(&board);
+						printf("You hit a mine! You lose!\n");
+						break;
+					} else if (revealed_cells == board.width*board.height - board.mine_num) {
+						refresh_screen(&board);
+						printf("You won!\n");
+						break;
+					}
+				} else {
+					reveal_cell(&board, x, y);
+					if (IS_MINE(CELLS_AT(&board, x, y))) {
+						reveal_board(&board);
+						refresh_screen(&board);
+						printf("You hit a mine! You lose!\n");
+						break;
+					} else if (revealed_cells == board.width*board.height - board.mine_num) {
+						refresh_screen(&board);
+						printf("You won!\n");
+						break;
+					}
 				}
 			}
 			refresh_screen(&board);
