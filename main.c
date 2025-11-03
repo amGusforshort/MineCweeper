@@ -323,6 +323,7 @@ _begin_game:
 					printf("Cell is flagged.\n");
 					continue;
 				}
+				// ugly repeated code, but I wasn't planning on updating this anyway :)
 				if (IS_REVEALED(CELLS_AT(&board, x, y))) {
 					bool hit_mine = reveal_around(&board, x, y);
 					if (hit_mine) {
