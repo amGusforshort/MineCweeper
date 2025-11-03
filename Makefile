@@ -1,11 +1,17 @@
 
 CC = cc
-OPTIONS = -Wall -Wextra -pedantic
+FLAGS = -Wall -Wextra -pedantic
+OPTIONS = -O3
 
-all: minecweeper
+EXE = minecweeper
+SRC = main
 
-run: minecweeper
-	./minecweeper
+all: $(EXE)
 
-minecweeper: main.c
-	$(CC) $(OPTIONS) -o $@ $<
+$(EXE): $(SRC).c
+	$(CC) $(OPTIONS) $(FLAGS) -o $@ $<
+
+.PHONY: clean
+clean:
+	rm -frv $(EXE)
+
