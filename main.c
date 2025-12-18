@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 
-#define IN_BUF_SIZE 128
+#define IN_BUF_SIZE 32
 
 #define CELLS_AT(board, x, y) (board)->cells[(y)*(board)->width + (x)]
 
